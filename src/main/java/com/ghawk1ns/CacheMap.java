@@ -76,31 +76,28 @@ public class CacheMap<K, V> extends ForwardingMap<K, V> {
 
     private void _load() {
         Map<K, V> freshMap = loader.load();
-        if (freshMap == null) {
-            loader.onError(new NullPointerException("Map returned from CacheMapBuilder.loader() is null"));
-            return;
-        }
-
-        boolean success = true;
-        try {
-            if (makeImmutable) {
-                cache = ImmutableMap.copyOf(freshMap);
-            } else {
-                Map<K, V> tmp = new HashMap<>(freshMap.size());
-                // copies everything into a new map
-                freshMap.forEach((k,v) -> tmp.merge(k, v, (unused, freshVal) -> freshVal));
-                // atomic transaction so we can pull from the cache while this is happening
-                cache = tmp;
+        if (freshMap != null) {
+            Map<K, V> old = cache;
+            try {
+                if (makeImmutable) {
+                    cache = ImmutableMap.copyOf(freshMap);
+                } else {
+                    Map<K, V> tmp = new HashMap<>(freshMap.size());
+                    // copies everything into a new map
+                    freshMap.forEach((k,v) -> tmp.merge(k, v, (unused, freshVal) -> freshVal));
+                    // atomic transaction so we can pull from the cache while this is happening
+                    cache = tmp;
+                }
+                lastUpdated = System.currentTimeMillis();
+            } catch (Exception e) {
+                // fallback to the previous cache
+                cache = old;
+                // pass any exceptions along
+                loader.onError(e);
+                return;
             }
-            lastUpdated = System.currentTimeMillis();
-        } catch (Exception e) {
-            // pass any exceptions along
-            loader.onError(e);
-            success = false;
         }
-        if (success) {
-            loader.onLoadComplete();
-        }
+        loader.onLoadComplete();
     }
 
     /**
