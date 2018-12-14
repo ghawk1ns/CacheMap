@@ -40,7 +40,7 @@ public class CacheMapBuilder<K, V> {
      * @param makeImmutable true if {@link CacheMap} should immutable when not loading
      * @see com.google.common.collect.ImmutableMap
      */
-    public CacheMapBuilder makeImmutable(boolean makeImmutable) {
+    public CacheMapBuilder<K, V> makeImmutable(boolean makeImmutable) {
         this.makeImmutable = makeImmutable;
         return this;
     }
@@ -49,7 +49,7 @@ public class CacheMapBuilder<K, V> {
      *
      * @param initialLoadDelay the time in {@link CacheMapBuilder#ttlTimeUnit} units before the first load can occur
      */
-    public CacheMapBuilder initialLoadDelay(long initialLoadDelay) {
+    public CacheMapBuilder<K, V> initialLoadDelay(long initialLoadDelay) {
         this.initialLoadDelay = initialLoadDelay;
         return this;
     }
@@ -58,7 +58,7 @@ public class CacheMapBuilder<K, V> {
      *
      * @param ttl the time to live lifespan of the cache, {@link CacheLoader#load()} is called at the end of every ttl
      */
-    public CacheMapBuilder ttl(long ttl) {
+    public CacheMapBuilder<K, V> ttl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -67,7 +67,7 @@ public class CacheMapBuilder<K, V> {
      *
      * @param ttlTimeUnit the time unit ttl is observed as. Defaults to {@link TimeUnit#MILLISECONDS}
      */
-    public CacheMapBuilder ttlTimeUnit(TimeUnit ttlTimeUnit) {
+    public CacheMapBuilder<K, V> ttlTimeUnit(TimeUnit ttlTimeUnit) {
         this.ttlTimeUnit = ttlTimeUnit;
         return this;
     }
@@ -78,7 +78,7 @@ public class CacheMapBuilder<K, V> {
      * otherwise a default is provided:
      * @see java.util.concurrent.Executors#newSingleThreadScheduledExecutor()
      */
-    public CacheMapBuilder scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
+    public CacheMapBuilder<K, V> scheduledExecutorService(ScheduledExecutorService scheduledExecutorService) {
         this.scheduledExecutorService = scheduledExecutorService;
         return this;
     }
@@ -87,7 +87,7 @@ public class CacheMapBuilder<K, V> {
      * Note: Failure to set will result in an {@link IllegalArgumentException}
      * @see CacheLoader
      */
-    public CacheMapBuilder loader(CacheLoader<K, V> loader) {
+    public CacheMapBuilder<K, V> loader(CacheLoader<K, V> loader) {
         this.loader = loader;
         return this;
     }
@@ -110,7 +110,7 @@ public class CacheMapBuilder<K, V> {
     }
 
     // convenience method
-    public static <K, V> CacheMapBuilder newBuilder() {
+    public static <K, V> CacheMapBuilder<K, V> newBuilder() {
         return new CacheMapBuilder<K, V>();
     }
 }
