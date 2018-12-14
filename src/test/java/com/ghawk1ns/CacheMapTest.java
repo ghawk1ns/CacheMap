@@ -5,9 +5,8 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class CacheMapTest {
@@ -16,43 +15,56 @@ public class CacheMapTest {
 
     @Test
     public void nullLoadTest() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        CacheMapBuilder.newBuilder()
+        Semaphore sem = new Semaphore(0);
+        final AtomicBoolean initial = new AtomicBoolean(true);
+        CacheMap<String, Boolean> cMap = CacheMapBuilder.<String, Boolean>newBuilder()
                 .ttl(10000)
-                .build(new CacheLoader() {
+                .build(new CacheLoader<String, Boolean>() {
                     @Override
-                    public Map load() {
-                        return null;
+                    public Map<String, Boolean> load() {
+                        HashMap<String, Boolean> m = null;
+                        // The first time we return a map with a value
+                        if (initial.compareAndSet(true, false)) {
+                            m = new HashMap<>();
+                            m.put(KEY, true);
+                        }
+                        // The second time load() is called null will be returned
+                        return m;
                     }
 
                     @Override
                     public void onError(Exception e) {
-                        Assert.assertTrue(e instanceof NullPointerException);
-                        latch.countDown();
+                        Assert.fail(e.getMessage());
                     }
 
                     @Override
                     public void onLoadComplete() {
-                        Assert.fail("We should never complete");
+                        sem.release();
                     }
                 });
 
-        try {
-            latch.await(3, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
+        long beforeUpdate = cMap.getLastUpdated();
+
+        sem.acquire();
+        Assert.assertTrue(cMap.get(KEY));
+        long updated = cMap.getLastUpdated();
+        Assert.assertTrue(beforeUpdate < updated);
+        // Make sure KEY is the same after we load a null map
+        sem.acquire();
+        Assert.assertTrue(cMap.get(KEY));
+        // Make sure that the old updated time is still the last updated time
+        Assert.assertEquals(updated, cMap.getLastUpdated());
     }
 
     @Test
     public void LoadTest() throws InterruptedException {
         AtomicLong val = new AtomicLong();
         Semaphore sem = new Semaphore(0);
-        CacheMap cache = CacheMapBuilder.newBuilder()
+        CacheMap cache = CacheMapBuilder.<String, Long>newBuilder()
                 .ttl(1000)
-                .build(new CacheLoader() {
+                .build(new CacheLoader<String, Long>() {
                     @Override
-                    public Map load() {
+                    public Map<String, Long> load() {
                         HashMap<String, Long> m = new HashMap<>();
                         m.put(KEY, val.getAndIncrement());
                         return m;
@@ -97,13 +109,13 @@ public class CacheMapTest {
         AtomicLong value = new AtomicLong();
         Semaphore sem = new Semaphore(0);
         long ttl = 1000;
-        CacheMap m = CacheMapBuilder.newBuilder()
+        CacheMap m = CacheMapBuilder.<String, Long>newBuilder()
                 .initialLoadDelay(100) // removes any doubt of a race condition
                 .ttl(ttl)
                 .makeImmutable(true)
-                .build(new CacheLoader() {
+                .build(new CacheLoader<String, Long>() {
                     @Override
-                    public Map load() {
+                    public Map<String, Long> load() {
                         HashMap<String, Long> m = new HashMap<>();
                         m.put(KEY, value.get());
                         return m;

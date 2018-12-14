@@ -3,7 +3,7 @@ package com.ghawk1ns;
 import java.util.Collections;
 import java.util.Map;
 
-public class EmptyCacheLoader implements CacheLoader {
+public class EmptyCacheLoader implements CacheLoader<Object, Object> {
 
     private static final EmptyCacheLoader singleton = new EmptyCacheLoader();
 

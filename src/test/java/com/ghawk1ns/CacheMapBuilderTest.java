@@ -37,8 +37,8 @@ public class CacheMapBuilderTest {
             CacheMapBuilder.newBuilder()
                     .ttl(1)
                     .build(EmptyCacheLoader.instance());
-        } catch (IllegalArgumentException E) {
-            Assert.fail("Loader was provided but illegal argument was thrown");
+        } catch (IllegalArgumentException e) {
+            Assert.fail(e.getMessage());
         }
     }
 }
